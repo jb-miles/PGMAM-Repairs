@@ -1,2 +1,26 @@
 develop/GEVI
 develop/Waybig
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# System files
+Thumbs.db
+.env
+.env.local
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
