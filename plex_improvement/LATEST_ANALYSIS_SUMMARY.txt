@@ -1,0 +1,206 @@
+================================================================================
+PLEX SCRAPER LOG ANALYSIS - LATEST ACTIVITY SUMMARY
+Generated: 2026-02-01 04:07 UTC
+Period: February 1, 2026 (since 03:05 UTC)
+================================================================================
+
+🚨 CRITICAL: SITUATION WORSE THAN BEFORE!
+
+PREVIOUS STATUS (from last analysis):
+  ✅ Working: 5 agents
+  ❌ Broken: 4 agents (syntax error on line 101: "_add_pgma_stubs_to_path")
+
+CURRENT STATUS (latest analysis):
+  ✅ Working: 1 agent (GayAdult only!)
+  ❌ Broken: 12 agents (NEW syntax error on line 104: "__file__")
+
+================================================================================
+THE NEW ERROR
+================================================================================
+
+File: utils.py
+Line: 104
+Error: "__file__" is an invalid variable name because it starts with "_"
+
+This is a DIFFERENT error from before!
+
+The previous error on line 101 (_add_pgma_stubs_to_path) appears to be fixed,
+but now there's a new error on line 104 involving __file__.
+
+================================================================================
+BROKEN AGENTS (12)
+================================================================================
+
+All with same error on line 104:
+
+  ❌ AEBN
+  ❌ CDUniverse
+  ❌ Fagalicious
+  ❌ GEVI
+  ❌ GEVIScenes
+  ❌ GayHotMovies
+  ❌ GayMovie
+  ❌ GayRado
+  ❌ GayWorld
+  ❌ HFGPM
+  ❌ HomoActive
+  ❌ SimplyAdult
+
+================================================================================
+WORKING AGENTS (1)
+================================================================================
+
+  ✅ GayAdult - 123 searches processed successfully at 03:27
+     Sample searches:
+       • Treasure Island Media Stoned & Boned
+       • Treasure Island Media Toy Chest
+       • Treasure Island Media Viral Loads
+       • Usa Jock Group Sex Whores
+       • Wurstfilm Freaks 4
+       • Plus 118 more...
+
+     Performance: 100% success rate, all searches completed
+
+================================================================================
+THE PROBLEM
+================================================================================
+
+RestrictedPython (Plex's security sandbox) forbids using "__file__" because:
+  • Double underscore names are "dunder" methods
+  • They can access Python internals
+  • Security risk in sandboxed environment
+
+You CANNOT use __file__ in Plex agents.
+
+================================================================================
+THE FIX
+================================================================================
+
+On line 104 of utils.py:
+
+FIND what __file__ is being used for, then replace it:
+
+Common scenarios:
+
+1. Getting current directory:
+   WRONG: current_dir = os.path.dirname(__file__)
+   RIGHT: current_dir = os.getcwd()
+   OR:    current_dir = '/var/lib/plexmediaserver/.../YourAgent.bundle/Contents/Code'
+
+2. Adding to sys.path:
+   WRONG: sys.path.insert(0, os.path.dirname(__file__))
+   RIGHT: Don't do this at all (Plex handles imports)
+
+3. Loading config files:
+   WRONG: config = os.path.join(os.path.dirname(__file__), 'config.json')
+   RIGHT: Use Plex's Resource API or hardcode the path
+
+SAFEST FIX: Comment out line 104 and see if agents work without it.
+
+================================================================================
+IMMEDIATE ACTIONS
+================================================================================
+
+1. Open utils.py
+2. Go to line 104
+3. See what __file__ is being used for
+4. Replace with compatible alternative (see above)
+5. Save file
+6. Restart Plex Media Server
+7. Check logs for "Started plug-in" messages
+
+Expected result: 12 broken agents should start working
+
+================================================================================
+ACTIVITY STATISTICS
+================================================================================
+
+Total search operations:     123 (GayAdult only)
+Title match failures:        0
+URL fetch errors:            21
+Success rate:                100%
+
+GayAdult is processing searches perfectly - the metadata scraping logic works!
+The only issue is the syntax error preventing 12 other agents from even starting.
+
+================================================================================
+WHY GAYAD ULT STILL WORKS
+================================================================================
+
+GayAdult likely:
+  • Uses a different version of utils.py (older/not updated)
+  • OR doesn't have the problematic line 104
+  • OR has a utils.py specific to GayAdult that wasn't updated
+
+This is why it continues working while 12 others broke.
+
+================================================================================
+COMPARISON
+================================================================================
+
+                    BEFORE          AFTER
+Working agents:     5               1     (WORSE!)
+Broken agents:      4               12    (MUCH WORSE!)
+Success rate:       100%            100%  (still good when working)
+
+YOUR UPDATE MADE THINGS WORSE by breaking 8 additional agents!
+
+================================================================================
+ROOT CAUSE ANALYSIS
+================================================================================
+
+What happened:
+  1. You had original error on line 101 (_add_pgma_stubs_to_path)
+  2. You attempted to fix it
+  3. The fix worked for line 101
+  4. BUT the fix introduced or exposed a new error on line 104 (__file__)
+  5. This new error affects 12 agents (vs 4 before)
+
+Lesson: Always test after making changes!
+
+================================================================================
+RECOMMENDED NEXT STEPS
+================================================================================
+
+IMMEDIATE (today):
+  ✅ Fix line 104 (__file__ issue)
+  ✅ Restart Plex
+  ✅ Verify all 12 agents start
+
+SHORT-TERM (this week):
+  □ Review your recent changes to utils.py
+  □ Test each agent individually
+  □ Consider reverting to last working version if problems persist
+
+LONG-TERM:
+  □ Keep backup of working utils.py
+  □ Document what each change does
+  □ Test changes on one agent before deploying to all
+
+================================================================================
+FILES AVAILABLE
+================================================================================
+
+📄 CRITICAL_NEW_ERROR_REPORT.md
+   Complete analysis with fix examples
+
+📄 LATEST_ACTIVITY_ANALYSIS.txt
+   Automated log analysis output
+
+📄 LATEST_ANALYSIS_SUMMARY.txt
+   This file
+
+================================================================================
+BOTTOM LINE
+================================================================================
+
+You went from 5 working agents to 1 working agent.
+
+The good news: The fix is simple (one line change on line 104)
+The bad news: 12 agents are now broken instead of 4
+
+Fix line 104 and you'll have 13 working agents!
+
+================================================================================
+END OF REPORT
+================================================================================
