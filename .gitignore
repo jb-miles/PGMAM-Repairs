@@ -1,5 +1,6 @@
-develop/GEVI
-develop/Waybig
+plex_improvement/*
+plex_improvement
+.kilocode
 
 # macOS
 .DS_Store

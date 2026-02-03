@@ -208,7 +208,9 @@ class AEBN(Agent.Movies):
                     utils.log(LOG_BIGLINE)
                     matchedStudio = False
                     try:
-                        fhtmlStudios = fhtml.xpath('//div[@class="dts-studio-name-wrapper"]/a/text()')
+                        # FIXED 2026-02-02: Updated XPath for current AEBN HTML structure
+                        # OLD (broken): fhtmlStudios = fhtml.xpath('//div[@class="dts-studio-name-wrapper"]/a/text()')
+                        fhtmlStudios = fhtml.xpath('//li[@class="section-detail-list-item-studio"]//a/text()')
                         FILMDICT['RecordedStudios'] = fhtmlStudios
                         utils.log('UPDATE:: {0:<29} {1}'.format('Site URL Studios', '{0:>2} - {1}'.format(len(fhtmlStudios), fhtmlStudios)))
                         for item in fhtmlStudios:
