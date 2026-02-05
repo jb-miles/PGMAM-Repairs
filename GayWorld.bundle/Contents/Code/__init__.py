@@ -123,8 +123,9 @@ class GayWorld(Agent.Movies):
             utils.log('SEARCH:: Search Query: {0}'.format(searchQuery))
             try:
                 html = HTML.ElementFromURL(searchQuery, timeout=20, sleep=utils.delay())
-                # Finds the entire media enclosure
-                filmsList = html.xpath('//div[@class="fusion-post-content-wrapper"]/div/h2')
+                # Find search result titles (filter to movies only)
+                result_links = html.xpath('//div[contains(@class,"fusion-post-content-wrapper")]//h2/a')
+                filmsList = [link for link in result_links if '/movies/' in (link.get('href') or '')]
                 if not filmsList:
                     raise Exception('< No Film Titles >')   # out of WHILE loop
             except Exception as e:
@@ -150,19 +151,11 @@ class GayWorld(Agent.Movies):
                 utils.log('SEARCH:: {0:<29} {1}'.format('Processing', '{0} of {1} for {2} - {3} {4}'.format(idx, filmsFound, FILMDICT['Studio'], FILMDICT['Title'], myYear)))
                 utils.log(LOG_BIGLINE)
 
-                # Site Title
-                try:
-                    siteTitle = film.xpath('./a/text()')[0]
-                    utils.matchTitle(siteTitle, FILMDICT)
-                except Exception as e:
-                    utils.log('SEARCH:: Error getting Site Title: {0}'.format(e))
-                    utils.log(LOG_SUBLINE)
-                    continue
-
                 # Site Title URL
                 utils.log(LOG_BIGLINE)
                 try:
-                    filmURL = film.xpath('./a/@href')[0]
+                    siteTitle = film.text_content().strip()
+                    filmURL = film.get('href')
                     filmURL = ('' if BASE_URL in filmURL else BASE_URL) + filmURL
                     FILMDICT['FilmURL'] = filmURL
                     utils.log('SEARCH:: {0:<29} {1}'.format('Site Title URL', filmURL))
@@ -179,6 +172,30 @@ class GayWorld(Agent.Movies):
                     FILMDICT['FilmHTML'] = fhtml
                 except Exception as e:
                     utils.log('SEARCH:: Error reading Site URL page: {0}'.format(e))
+                    utils.log(LOG_SUBLINE)
+                    continue
+
+                # Prefer movie page title for matching
+                try:
+                    pageTitle = fhtml.xpath('//main//h1/text()')
+                    pageTitle = pageTitle[0].strip() if pageTitle else ''
+                    titleToMatch = pageTitle if pageTitle else siteTitle
+                    utils.matchTitle(titleToMatch, FILMDICT)
+                except Exception as e:
+                    utils.log('SEARCH:: Error getting Site Title: {0}'.format(e))
+                    utils.log(LOG_SUBLINE)
+                    continue
+
+                # Defensive check: skip non-movie pages
+                try:
+                    hasStudio = fhtml.xpath('//strong[contains(.,"Studio:")]')
+                    hasActors = fhtml.xpath('//strong[contains(.,"Actors")]')
+                    if not hasStudio and not hasActors:
+                        utils.log('SEARCH:: Error: Missing movie metadata fields (Studio/Actors) - skipping')
+                        utils.log(LOG_SUBLINE)
+                        continue
+                except Exception as e:
+                    utils.log('SEARCH:: Error validating Site URL page: {0}'.format(e))
                     utils.log(LOG_SUBLINE)
                     continue
 

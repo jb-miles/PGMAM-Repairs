@@ -1,5 +1,11 @@
 [
     {
+        "id": "useiafd",
+        "label": "Use IAFD for cast/director matching and enrichment",
+        "type": "bool",
+        "default": "false"
+    },
+    {
         "id": "matchiafdduration",
         "label": "Match against IAFD's recorded film/scene length",
         "type": "bool",

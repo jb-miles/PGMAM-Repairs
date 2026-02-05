@@ -196,6 +196,25 @@ def getCast(agntCastList, AGENTDICT, FILMDICT):
     if not agntCastList and 'Cast' not in FILMDICT: # nowt to do
         raise Exception('< No Cast Found! >')
 
+    if not AGENTDICT.get('prefUSEIAFD', False):
+        log('UTILS :: IAFD disabled: Using agent cast only')
+        castDict = {}
+        for castName in agntCastList:
+            castDict[castName] = {
+                'Alias': [],
+                'Awards': [],
+                'Bio': {},
+                'CompareName': '',
+                'CompareAlias': [],
+                'Films': [],
+                'Nationality': '',
+                'Photo': AGENTDICT['pgmaNOCASTPOSTER'],
+                'RealName': castName,
+                'Role': '',
+                'URL': ''
+            }
+        return castDict
+
     # clean up the Cast List make a copy then clear
     agntCastList = [x.split('(')[0].strip() for x in agntCastList]
     agntCastSet = {x.replace("St.", 'St ').replace("'s", '').replace('.', '') for x in agntCastList}      # remove all 's and initial dots from and duplicates
@@ -240,6 +259,25 @@ def getDirectors(agntDirectorList, AGENTDICT, FILMDICT):
 
     if not agntDirectorList and 'Directors' not in FILMDICT: # nowt to do
         raise Exception('< No Directors Found! >')
+
+    if not AGENTDICT.get('prefUSEIAFD', False):
+        log('UTILS :: IAFD disabled: Using agent directors only')
+        directorDict = {}
+        for directorName in agntDirectorList:
+            directorDict[directorName] = {
+                'Alias': [],
+                'Awards': [],
+                'Bio': {},
+                'CompareName': '',
+                'CompareAlias': [],
+                'Films': [],
+                'Nationality': '',
+                'Photo': AGENTDICT['pgmaNODIRECTORPOSTER'],
+                'RealName': directorName,
+                'Role': '',
+                'URL': ''
+            }
+        return directorDict
 
     # clean up the Director List
     agntDirectorList = [x.split('(')[0].strip() for x in agntDirectorList]                                          # remove AKA part of name eg James Dean (J. Deano) = James Dean
@@ -6647,7 +6685,7 @@ def updateMetadata(metadata, media, lang, force=True):
             FILMDICT['Status'] = False
 
         # we should have a match on studio, title and year now. Find corresponding film on IAFD
-        if FILMDICT['Status'] is True:
+        if FILMDICT['Status'] is True and AGENTDICT.get('prefUSEIAFD', False):
             log(LOG_BIGLINE)
             log('UTILS :: Check for Film on IAFD')
             try:
@@ -6655,6 +6693,8 @@ def updateMetadata(metadata, media, lang, force=True):
                 log(LOG_BIGLINE)
 
             except: pass
+        elif FILMDICT['Status'] is True:
+            log('UTILS :: IAFD disabled: skipping IAFD film lookup')
 
     except Exception as e:
         log('UTILS :: Error: Setting up Update Variables: {0}'.format(e))
@@ -7471,6 +7511,7 @@ def setupAgentVariables(media):
                 prefPLEXTOKEN = Prefs['plextoken']                        # Preferences, plex token
                 prefPREFIXGENRE = Prefs['prefixgenre']                    # prefix genres with agent sexuality type - useful for mixed content plex servers
                 prefMATCHIAFDDURATION = Prefs['matchiafdduration']        # Match against IAFD Duration value
+                prefUSEIAFD = Prefs['useiafd']                            # Use IAFD for cast/director matching
                 prefMATCHSITEDURATION = Prefs['matchsiteduration']        # Match against Site Duration value
                 prefPOSTERSOURCEDOWNLOAD = Prefs['postersourcedownload']  # Down film poster to disk, (renamed as film title + image extension)
                 prefPREFIXLEGEND = Prefs['prefixlegend']                  # place cast legend at start of summary or end
@@ -7850,6 +7891,7 @@ def setupAgentVariables(media):
                     'prefPREFIXGENRE': prefPREFIXGENRE,
                     'prefPREFIXLEGEND': prefPREFIXLEGEND,
                     'prefUSEBACKGROUNDART': prefUSEBACKGROUNDART,
+                    'prefUSEIAFD': prefUSEIAFD,
                     'pgmaAGENTPOSTER': pgmaAGENTPOSTER,
                     'pgmaCASTFACEFOLDER': pgmaCASTFACEFOLDER,
                     'pgmaCASTPOSTERFOLDER': pgmaCASTPOSTERFOLDER,
