@@ -3,16 +3,16 @@ meta:
   run_id: ""
   issue_id: ""
   bundle_path: ""
-  current_phase: "validation"
+  current_phase: "implementation"
   current_report: "repairs/information/error-catalog.md"
-  last_log_scan: "repairs/progress/consolidated_plex_logs_20260205_181238.txt"
-  last_decision: "Make studio mismatch a soft warning with reduced score instead of hard skip"
-  last_action: "Fixed AEBN studio match + propagated title fix to 4 agents, deployed all 5 to Plex"
-  last_code_change: "AEBN.bundle/Contents/Code/__init__.py lines 226-227, 280"
-  last_updated: "2026-02-05"
-  next_steps: "Restart Plex plugins, wait for scan cycle, re-scan logs to measure reduction"
+  last_log_scan: "repairs/progress/consolidated_plex_logs_20260206_213635.txt"
+  last_decision: "Patch shared parser/indexing defects across all bundles from latest live-log triage"
+  last_action: "Ran live aggregator and applied shared utils hardening across 21 bundles + _PGMA source"
+  last_code_change: "*/Contents/Code/utils.py + _PGMA/Scripts/utils.py (collections parser, synopsis/release-date extraction, release-date metadata guard)"
+  last_updated: "2026-02-06"
+  next_steps: "Deploy updated bundles to Plex plugin directory, restart plugins, refresh metadata, then re-run aggregator"
   stop_condition: "user confirms error counts are reduced or switches tasks"
-  notes: "All fixes deployed. AEBN studio match now soft (score=86 vs 100). Title substring fallback in 5 agents total."
+  notes: "Latest run uses live logs from /Users/jbmiles/Library/Logs/Plex Media Server/PMS Plugin Logs. Fresh report: repairs/progress/consolidated_plex_logs_20260206_213635.txt. New patch set addresses recurring list-index/date-update failures."
 
 checklist:
   - item: "Collect logs (7-day window)"
@@ -35,6 +35,8 @@ checklist:
     status: "done"
   - item: "Restart Plex and validate error reduction"
     status: "todo"
+  - item: "Run live log aggregation and apply shared parser hardening"
+    status: "done"
 
 decisions:
   - date: "2026-02-05"

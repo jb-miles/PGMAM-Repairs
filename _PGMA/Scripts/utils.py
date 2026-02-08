@@ -1228,7 +1228,8 @@ def getSiteInfoAEBN(AGENTDICT, FILMDICT, **kwargs):
         #   1.  Synopsis
         log(LOG_SUBLINE)
         try:
-            htmlsynopsis = html.xpath('//div[@class="dts-section-page-detail-description-body"]/text()')[0].strip()
+            htmlsynopsis = html.xpath('//div[@class="dts-section-page-detail-description-body"]//text()')
+            htmlsynopsis = ' '.join([x.strip() for x in htmlsynopsis if x.strip()])
             siteInfoDict['Synopsis'] = htmlsynopsis
             log('UTILS :: {0:<29} {1}'.format('Synopsis', htmlsynopsis))
         except Exception as e:
@@ -1340,7 +1341,9 @@ def getSiteInfoAEBN(AGENTDICT, FILMDICT, **kwargs):
         if kwReleaseDate is None:
             log(LOG_SUBLINE)
             try:
-                htmldate = html.xpath('//li[@class="section-detail-list-item-release-date"]/text()[normalize-space()]')[0].strip()
+                htmldate = html.xpath('//li[@class="section-detail-list-item-release-date"]//text()[normalize-space()]')
+                htmldate = [x.strip() for x in htmldate if x.strip()]
+                htmldate = htmldate[0]
                 htmldate = htmldate.replace('July', 'Jul').replace('Sept', 'Sep')    # AEBN uses 4 letter abbreviation for September
                 htmldate = datetime.strptime(htmldate, '%b %d, %Y')
                 siteInfoDict['ReleaseDate'] = htmldate
@@ -2002,7 +2005,9 @@ def getSiteInfoCDUniverse(AGENTDICT, FILMDICT, **kwargs):
         if kwReleaseDate is None:
             log(LOG_SUBLINE)
             try:
-                htmldate = html.xpath('//li[@class="section-detail-list-item-release-date"]/text()[normalize-space()]')[0].strip()
+                htmldate = html.xpath('//li[@class="section-detail-list-item-release-date"]//text()[normalize-space()]')
+                htmldate = [x.strip() for x in htmldate if x.strip()]
+                htmldate = htmldate[0]
                 htmldate = datetime.strptime(htmldate, '%b %d, %Y')
                 siteInfoDict['ReleaseDate'] = htmldate
                 log('UTILS :: {0:<29} {1}'.format('Release Date', htmldate.strftime('%Y-%m-%d')))
@@ -2670,8 +2675,9 @@ def getSiteInfoGayHotMovies(AGENTDICT, FILMDICT, **kwargs):
         #   4.  Collections
         log(LOG_SUBLINE)
         try:
-            htmlcollections = html.xpath('//strong[text()="Series:"]/following-sibling::text()[1]')[0].strip()
-            htmlcollections = [x.strip() for x in htmlcollections if x.strip()]
+            htmlcollections = html.xpath('//strong[text()="Series:"]/following-sibling::text()[1]')
+            htmlcollections = htmlcollections[0] if htmlcollections else ''
+            htmlcollections = [x.strip() for x in re.split(r'[|,/]', htmlcollections) if x.strip()]
             collections = list(set(htmlcollections))
             collections.sort(key = lambda x: x.lower())
             log('UTILS :: {0:<29} {1}'.format('{0}:'.format('Collections'), '{0:>2} - {1}'.format(len(collections), collections)))
@@ -7145,13 +7151,15 @@ def updateMetadata(metadata, media, lang, force=True):
             log(LOG_BIGLINE)
             try:
                 log('UTILS :: {0:<29} {1}'.format('2n. Originally Available Date', ''))
-                releaseDate = myAgentDict['ReleaseDate']
-                log('UTILS :: {0:<29} {1}'.format('Agent Date', releaseDate.date()))
-
-                metadata.originally_available_at = releaseDate
-                metadata.year = metadata.originally_available_at.year
-                log('UTILS :: {0:<29} {1}'.format('Current Date', metadata.originally_available_at))
-                log('UTILS :: {0:<29} {1}'.format('Current Year', metadata.year))
+                releaseDate = myAgentDict.get('ReleaseDate')
+                if releaseDate:
+                    log('UTILS :: {0:<29} {1}'.format('Agent Date', releaseDate.date()))
+                    metadata.originally_available_at = releaseDate
+                    metadata.year = metadata.originally_available_at.year
+                    log('UTILS :: {0:<29} {1}'.format('Current Date', metadata.originally_available_at))
+                    log('UTILS :: {0:<29} {1}'.format('Current Year', metadata.year))
+                else:
+                    log('UTILS :: Warning: No Release Date set by agent; skipping Originally Available Date update')
 
             except Exception as e:
                 log('UTILS :: Error setting Originally Available Date: {0}'.format(e))

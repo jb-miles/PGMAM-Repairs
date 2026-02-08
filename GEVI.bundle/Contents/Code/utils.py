@@ -6586,6 +6586,14 @@ def matchTitle(filmTitle, FILMDICT, myAgent=AGENT):
         filmCompareTitle = sortAlphaChars(filmTitleNormaliseB)
         testTitle = 'Passed' if filmCompareTitle in FILMDICT['CompareTitle'] else 'Failed'
 
+    if testTitle == 'Failed':
+        normaliseTitle = FILMDICT.get('NormaliseTitle', '')
+        normaliseShortTitle = FILMDICT.get('NormaliseShortTitle', '')
+        if normaliseTitle and normaliseTitle in filmTitleNormaliseA:
+            testTitle = 'Passed (Substring)'
+        elif normaliseShortTitle and normaliseShortTitle in filmTitleNormaliseA:
+            testTitle = 'Passed (Substring)'
+
     if testTitle == 'Failed':                   # check if episode  i.e. series + number in agent title
         for item in FILMDICT['Episodes']:
             pattern = re.compile(re.escape(item), re.IGNORECASE)
@@ -7821,27 +7829,43 @@ def setupAgentVariables(media):
 
         # Plex Library, that media resides in
         try:
-            metadataURL = '{0}/library/metadata/{1}?X-Plex-Token={2}'.format(plexBaseURL, media.id, prefPLEXTOKEN)
-            JSon = JSON.ObjectFromURL(metadataURL, timeout=20, sleep=delay())
+            metadataURL = '{0}/library/metadata/{1}'.format(plexBaseURL, media.id)
+            response = pgmaSSN.get(metadataURL, timeout=20)
+            JSon = response.json()
             pgmaLIBRARYID = JSon.get('MediaContainer').get('librarySectionID')
             pgmaLIBRARYTITLE = JSon.get('MediaContainer').get('librarySectionTitle')
+            if not pgmaLIBRARYID or not pgmaLIBRARYTITLE:
+                raise Exception('Missing librarySectionID/librarySectionTitle from session JSON response')
             log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
             log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
 
         except Exception as e:
             pgmaLIBRARYID = ''
             pgmaLIBRARYTITLE = ''
-            log('UTILS :: Error: Getting Library ID & Title: {0}'.format(e))
-            json = e.message
-            jsonArray = json.replace('" ', '"_').split('_')
-            for item in jsonArray:
-                if 'librarySectionID' in item:
-                    pgmaLIBRARYID = item.split('=')[1].replace('"', '')
-                if 'librarySectionTitle' in item:
-                    pgmaLIBRARYTITLE = item.split('=')[1].replace('"', '')
-            log('UTILS :: Getting Library ID & Title from Error Message')
-            log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
-            log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
+            log('UTILS :: Error: Getting Library ID & Title via session JSON: {0}'.format(e))
+            try:
+                metadataURL = '{0}/library/metadata/{1}?X-Plex-Token={2}'.format(plexBaseURL, media.id, prefPLEXTOKEN)
+                xml = XML.ElementFromURL(metadataURL, timeout=20, sleep=delay())
+                xmlString = XML.StringFromElement(xml)
+                pgmaLIBRARYID = xmlString.split('librarySectionID="')[1].split('"')[0]
+                pgmaLIBRARYTITLE = xmlString.split('librarySectionTitle="')[1].split('"')[0]
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
+
+            except Exception as e:
+                pgmaLIBRARYID = ''
+                pgmaLIBRARYTITLE = ''
+                log('UTILS :: Error: Getting Library ID & Title via XML: {0}'.format(e))
+                json = e.message
+                jsonArray = json.replace('" ', '"_').split('_')
+                for item in jsonArray:
+                    if 'librarySectionID' in item:
+                        pgmaLIBRARYID = item.split('=')[1].replace('"', '')
+                    if 'librarySectionTitle' in item:
+                        pgmaLIBRARYTITLE = item.split('=')[1].replace('"', '')
+                log('UTILS :: Getting Library ID & Title from Error Message')
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
 
 
         continueSetup = True if pgmaMACHINEID and pgmaSSN and pgmaLIBRARYID and pgmaLIBRARYTITLE else False

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding=utf8
-# 2026-01-30: Expand release-date matching window, add local Plex token fallback, and parse library metadata from XML.
+# 2026-01-30: Expand release-date matching window and add local Plex token fallback.
 '''
 General Functions found in all agents
                                                   Version History
@@ -3803,12 +3803,12 @@ def getSiteInfoGEVI(AGENTDICT, FILMDICT, **kwargs):
                     elif '-' in item:                                                                               # format 2 - take year after dash:
                         items = item.split('-')
                         items = [x.strip() for x in items]
-                        if len(items[1]) == 1:              
-                            item = '{0}{1}'.format(item[0][0:2], item.split('-')[1])                                # e.g 1995-7  -> 199 + 7
+                        if len(items[1]) == 1:
+                            item = '{0}{1}'.format(items[0][0:3], items[1])                                         # e.g 1995-7  -> 199 + 7
                         elif len(items[1]) == 2:             # e.g 1995-97
-                            item = '{0}{1}'.format(item[0][0:1], item.split('-')[1])                                # e.g 1995-97 -> 19 + 97
+                            item = '{0}{1}'.format(items[0][0:2], items[1])                                         # e.g 1995-97 -> 19 + 97
                         else:
-                            item = item[1]                                                                          # eg 1995-1997 -> 1997
+                            item = items[1]                                                                         # eg 1995-1997 -> 1997
 
                     # item should now be in YY or YYYY format, if year format YY is less than the comparison date it's 1999, convert to date and add to set
                     item = item if len(item) == 4 else '{0}{1}'.format(20 if item <= compareYear else 19, item)     # pad 2 digit years with correct century
@@ -6586,6 +6586,14 @@ def matchTitle(filmTitle, FILMDICT, myAgent=AGENT):
         filmCompareTitle = sortAlphaChars(filmTitleNormaliseB)
         testTitle = 'Passed' if filmCompareTitle in FILMDICT['CompareTitle'] else 'Failed'
 
+    if testTitle == 'Failed':
+        normaliseTitle = FILMDICT.get('NormaliseTitle', '')
+        normaliseShortTitle = FILMDICT.get('NormaliseShortTitle', '')
+        if normaliseTitle and normaliseTitle in filmTitleNormaliseA:
+            testTitle = 'Passed (Substring)'
+        elif normaliseShortTitle and normaliseShortTitle in filmTitleNormaliseA:
+            testTitle = 'Passed (Substring)'
+
     if testTitle == 'Failed':                   # check if episode  i.e. series + number in agent title
         for item in FILMDICT['Episodes']:
             pattern = re.compile(re.escape(item), re.IGNORECASE)
@@ -7821,18 +7829,43 @@ def setupAgentVariables(media):
 
         # Plex Library, that media resides in
         try:
-            metadataURL = '{0}/library/metadata/{1}?X-Plex-Token={2}'.format(plexBaseURL, media.id, prefPLEXTOKEN)
-            xml = XML.ElementFromURL(metadataURL, timeout=20, sleep=delay())
-            xmlString = XML.StringFromElement(xml)
-            pgmaLIBRARYID = xmlString.split('librarySectionID="')[1].split('"')[0]
-            pgmaLIBRARYTITLE = xmlString.split('librarySectionTitle="')[1].split('"')[0]
+            metadataURL = '{0}/library/metadata/{1}'.format(plexBaseURL, media.id)
+            response = pgmaSSN.get(metadataURL, timeout=20)
+            JSon = response.json()
+            pgmaLIBRARYID = JSon.get('MediaContainer').get('librarySectionID')
+            pgmaLIBRARYTITLE = JSon.get('MediaContainer').get('librarySectionTitle')
+            if not pgmaLIBRARYID or not pgmaLIBRARYTITLE:
+                raise Exception('Missing librarySectionID/librarySectionTitle from session JSON response')
             log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
             log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
 
         except Exception as e:
             pgmaLIBRARYID = ''
             pgmaLIBRARYTITLE = ''
-            log('UTILS :: Error: Getting Library ID & Title: {0}'.format(e))
+            log('UTILS :: Error: Getting Library ID & Title via session JSON: {0}'.format(e))
+            try:
+                metadataURL = '{0}/library/metadata/{1}?X-Plex-Token={2}'.format(plexBaseURL, media.id, prefPLEXTOKEN)
+                xml = XML.ElementFromURL(metadataURL, timeout=20, sleep=delay())
+                xmlString = XML.StringFromElement(xml)
+                pgmaLIBRARYID = xmlString.split('librarySectionID="')[1].split('"')[0]
+                pgmaLIBRARYTITLE = xmlString.split('librarySectionTitle="')[1].split('"')[0]
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
+
+            except Exception as e:
+                pgmaLIBRARYID = ''
+                pgmaLIBRARYTITLE = ''
+                log('UTILS :: Error: Getting Library ID & Title via XML: {0}'.format(e))
+                json = e.message
+                jsonArray = json.replace('" ', '"_').split('_')
+                for item in jsonArray:
+                    if 'librarySectionID' in item:
+                        pgmaLIBRARYID = item.split('=')[1].replace('"', '')
+                    if 'librarySectionTitle' in item:
+                        pgmaLIBRARYTITLE = item.split('=')[1].replace('"', '')
+                log('UTILS :: Getting Library ID & Title from Error Message')
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary ID', pgmaLIBRARYID))
+                log('UTILS :: {0:<29} {1}'.format('\t\tLibrary Title', pgmaLIBRARYTITLE))
 
 
         continueSetup = True if pgmaMACHINEID and pgmaSSN and pgmaLIBRARYID and pgmaLIBRARYTITLE else False
