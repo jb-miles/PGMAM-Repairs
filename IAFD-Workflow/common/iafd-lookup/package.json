@@ -1,0 +1,13 @@
+{
+  "name": "iafd-lookup",
+  "version": "1.0.0",
+  "description": "Bulk IAFD performer URL lookup using Playwright",
+  "main": "iafd-lookup.js",
+  "scripts": {
+    "start": "node iafd-lookup.js --input performers.txt --output results.csv --resume",
+    "install-browser": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}
